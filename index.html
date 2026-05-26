@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Dashboard interativo dos tipos de Produtos Técnicos/Tecnológicos (PTT) adotados pela Área 27."/>
+<title>Dashboard PTT — Área 27</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sora',sans-serif;background:#061427;color:#fff;min-height:100vh}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:#071b33}
+  ::-webkit-scrollbar-thumb{background:#2563eb;border-radius:3px}
+
+  .app{display:flex;min-height:100vh;position:relative}
+  .bg-glow{pointer-events:none;position:fixed;inset:0;background:
+    radial-gradient(circle at top left,rgba(15,90,215,.22),transparent 32%),
+    radial-gradient(circle at 70% 10%,rgba(56,189,248,.18),transparent 24%),
+    linear-gradient(135deg,#061427 0%,#071b33 48%,#020817 100%);z-index:0}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;border-right:1px solid rgba(255,255,255,.1);
+    background:rgba(3,17,37,.85);padding:20px;backdrop-filter:blur(20px);
+    position:relative;z-index:1;display:flex;flex-direction:column;gap:24px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo-icon{width:44px;height:44px;border-radius:14px;background:#2563eb;
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    box-shadow:0 8px 24px rgba(37,99,235,.4)}
+  .logo-text p{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#93c5fd;font-weight:600}
+  .logo-text h1{font-size:15px;font-weight:700;color:#fff}
+  .nav{display:flex;flex-direction:column;gap:6px}
+  .nav-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;
+    border:none;cursor:pointer;font-size:13px;font-family:'Sora',sans-serif;
+    color:rgba(191,219,254,.85);background:transparent;transition:.2s;text-align:left}
+  .nav-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+  .nav-btn.active{background:#2563eb;color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.35)}
+  .sidebar-note{border-radius:16px;border:1px solid rgba(147,197,253,.2);
+    background:rgba(255,255,255,.05);padding:14px}
+  .sidebar-note p.label{font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#93c5fd;margin-bottom:6px}
+  .sidebar-note p.body{font-size:12px;line-height:1.6;color:rgba(255,255,255,.8)}
+
+  /* MAIN */
+  main{flex:1;padding:28px;overflow:auto;position:relative;z-index:1}
+  header{margin-bottom:24px}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .header-label{font-size:11px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#93c5fd;margin-bottom:8px}
+  h2.main-title{font-size:28px;font-weight:900;line-height:1.2;color:#fff}
+  .main-subtitle{margin-top:8px;font-size:13px;color:rgba(255,255,255,.7);line-height:1.6;max-width:600px}
+  .search-wrap{position:relative;min-width:280px}
+  .search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(147,197,253,.7)}
+  .search-wrap input{width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.1);padding:11px 14px 11px 42px;font-size:13px;
+    color:#fff;font-family:'Sora',sans-serif;outline:none;backdrop-filter:blur(8px)}
+  .search-wrap input::placeholder{color:rgba(147,197,253,.5)}
+  .search-wrap input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(37,99,235,.2)}
+
+  /* SUMMARY */
+  .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+  .card-info{border-radius:20px;border:1px solid rgba(255,255,255,.15);
+    background:rgba(255,255,255,.08);padding:18px;color:#fff;
+    box-shadow:0 20px 40px rgba(0,0,0,.2);backdrop-filter:blur(8px)}
+  .card-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
+    justify-content:center;margin-bottom:10px;font-size:20px}
+  .card-title{font-size:15px;font-weight:800;margin-bottom:6px;color:#fff}
+  .card-body{font-size:12px;line-height:1.65;color:rgba(255,255,255,.75)}
+  .card-dark{border-radius:20px;border:1px solid rgba(255,255,255,.15);
+    background:rgba(7,27,51,.8);padding:14px;box-shadow:0 20px 40px rgba(0,0,0,.2)}
+  .counters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .counter-item{border-radius:14px;border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.1);padding:12px;text-align:center}
+  .counter-icon{font-size:18px;margin-bottom:6px}
+  .counter-val{font-size:22px;font-weight:900;color:#fff}
+  .counter-label{font-size:10px;color:rgba(191,219,254,.8);margin-top:4px;line-height:1.3}
+
+  /* FILTERS */
+  .filters{border-radius:20px;border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.05);padding:12px;margin-bottom:20px;
+    backdrop-filter:blur(8px);display:flex;flex-wrap:wrap;gap:8px}
+  .filter-btn{border-radius:14px;padding:7px 14px;font-size:12px;font-weight:700;
+    border:none;cursor:pointer;font-family:'Sora',sans-serif;transition:.2s}
+  .filter-btn.active{background:#2563eb;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.35)}
+  .filter-btn:not(.active){border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(191,219,254,.85)}
+  .filter-btn:not(.active):hover{background:rgba(255,255,255,.12);color:#fff}
+
+  /* GRID */
+  .grid-panel{display:grid;grid-template-columns:1fr 380px;gap:20px}
+  .cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start}
+
+  /* PTT CARDS */
+  .ptt-card{border-radius:20px;border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.07);color:#fff;
+    padding:16px;text-align:left;cursor:pointer;transition:.2s;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);backdrop-filter:blur(6px);width:100%}
+  .ptt-card:hover{border-color:rgba(147,197,253,.5);transform:translateY(-2px);
+    background:rgba(255,255,255,.11);box-shadow:0 16px 40px rgba(0,0,0,.3)}
+  .ptt-card.active{border-color:#60a5fa;background:rgba(37,99,235,.25);
+    box-shadow:0 0 0 2px rgba(37,99,235,.4),0 16px 40px rgba(30,58,138,.3)}
+  .card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+  .card-badges{display:flex;align-items:center;gap:8px}
+  .num-badge{width:36px;height:36px;border-radius:10px;background:#2563eb;color:#fff;
+    font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 12px rgba(37,99,235,.4);flex-shrink:0}
+  .icon-badge{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid rgba(255,255,255,.15);font-size:17px;flex-shrink:0}
+  .rec-badge{border-radius:20px;background:rgba(16,185,129,.25);border:1px solid rgba(16,185,129,.4);
+    padding:3px 10px;font-size:10px;font-weight:800;color:#6ee7b7;white-space:nowrap}
+  .card-title-ptt{font-size:14px;font-weight:900;line-height:1.35;margin-bottom:10px;
+    min-height:40px;color:#fff}
+  .def-label{display:inline-flex;border-radius:20px;background:rgba(37,99,235,.3);
+    border:1px solid rgba(96,165,250,.3);padding:3px 10px;
+    font-size:10px;font-weight:800;color:#93c5fd;margin-bottom:6px}
+  .card-def{font-size:12px;line-height:1.6;color:rgba(255,255,255,.72);
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .card-footer{display:flex;align-items:center;justify-content:space-between;
+    border-top:1px solid rgba(255,255,255,.12);margin-top:12px;padding-top:10px;
+    font-size:12px;font-weight:700;color:#60a5fa}
+
+  /* DETAIL PANEL */
+  .detail-panel{border-radius:24px;border:1px solid rgba(255,255,255,.15);
+    background:rgba(7,27,51,.92);color:#fff;padding:20px;
+    box-shadow:0 24px 48px rgba(0,0,0,.4);position:sticky;top:20px;
+    max-height:calc(100vh - 40px);overflow-y:auto;backdrop-filter:blur(16px)}
+  .detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .detail-label{font-size:10px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:#93c5fd}
+  .detail-title{font-size:18px;font-weight:900;line-height:1.3;margin-top:4px;color:#fff}
+  .close-btn{border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);
+    padding:6px 9px;cursor:pointer;color:rgba(255,255,255,.7);transition:.15s;font-size:14px;flex-shrink:0}
+  .close-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .tag{border-radius:20px;padding:3px 10px;font-size:10px;font-weight:800}
+  .tag-blue{background:#2563eb;color:#fff}
+  .tag-slate{background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
+  .tag-green{background:rgba(16,185,129,.25);border:1px solid rgba(16,185,129,.4);color:#6ee7b7}
+  .detail-blocks{display:flex;flex-direction:column;gap:10px}
+  .block{border-radius:14px;padding:14px}
+  .block-def{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
+  .block-ex{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2)}
+  .block-use{background:rgba(37,99,235,.12);border:1px solid rgba(96,165,250,.2)}
+  .block-label{font-size:9px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
+  .block-def .block-label{color:#93c5fd}
+  .block-ex .block-label{color:#6ee7b7}
+  .block-use .block-label{color:#93c5fd}
+  .block-text{font-size:12px;line-height:1.65;color:rgba(255,255,255,.8)}
+  .copy-btn{margin-top:14px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    border-radius:12px;background:#2563eb;color:#fff;border:none;padding:12px;
+    font-size:13px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;
+    box-shadow:0 4px 16px rgba(37,99,235,.4);transition:.2s}
+  .copy-btn:hover{background:#1d4ed8}
+
+  /* FOOTER */
+  .footer-banner{margin-top:20px;border-radius:20px;border:1px solid rgba(147,197,253,.2);
+    background:linear-gradient(135deg,rgba(29,78,216,.4),rgba(7,89,133,.2),rgba(255,255,255,.05));
+    padding:18px;backdrop-filter:blur(8px);display:flex;gap:16px;align-items:center}
+  .banner-icon{width:52px;height:52px;border-radius:14px;background:#2563eb;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    box-shadow:0 4px 16px rgba(37,99,235,.4);font-size:22px}
+  .banner-title{font-size:16px;font-weight:900;color:#fff}
+  .banner-body{font-size:12px;color:rgba(255,255,255,.8);margin-top:4px;line-height:1.6}
+  .empty{border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);
+    padding:40px;text-align:center;color:rgba(191,219,254,.7);grid-column:1/-1}
+
+  /* RESPONSIVE */
+  @media(max-width:1100px){.grid-panel{grid-template-columns:1fr}.detail-panel{position:relative;top:0;max-height:none}}
+  @media(max-width:900px){.sidebar{display:none}.summary{grid-template-columns:1fr 1fr}.cards-grid{grid-template-columns:1fr}}
+  @media(max-width:600px){.summary{grid-template-columns:1fr}main{padding:16px}.header-top{flex-direction:column}.search-wrap{min-width:unset;width:100%}}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="app" id="app"></div>
+
+<script>
+const pttTypes = [
+  {id:1,title:"Empresa ou Organização social (inovadora)",category:"Gestão",icon:"🏢",
+    definition:"Uma nova empresa ou organização social formada com base em produto, serviço ou processo tecnológico desenvolvido por docentes e/ou discentes no âmbito do programa de Pós-Graduação.",
+    example:"Startups, OSCIPs, associações sem fins lucrativos.",
+    useCase:"Adequado quando a pesquisa gera uma nova entidade organizada para entregar produto, serviço ou processo inovador."},
+  {id:2,title:"Processo/Tecnologia e Produto/Material não patenteáveis",category:"Gestão",icon:"⚙️",
+    definition:"Produtos e/ou processos tecnológicos que, por impedimentos legais, não apresentam mecanismo formal de proteção em território brasileiro, incluindo quaisquer ativos de propriedade intelectual.",
+    example:"Novos processos de gestão documentados, novas técnicas de desenvolvimento de lideranças sistematizadas.",
+    useCase:"Indicado para modelos, métodos, fluxos, matrizes, rotinas e processos de gestão documentados."},
+  {id:3,title:"Relatório técnico conclusivo",category:"Documentos",icon:"📄",recommended:true,
+    definition:"Texto elaborado de maneira concisa, contendo informações sobre o projeto/atividade realizado, desde seu planejamento até as conclusões. Indica relevância dos resultados em termos de impacto social ou econômico e a aplicação do conhecimento produzido.",
+    example:"Relatórios de consultorias e assessorias técnicas.",
+    useCase:"Recomendado quando o produto principal é um diagnóstico técnico aplicado, com conclusões e recomendações institucionais."},
+  {id:4,title:"Tecnologia social",category:"Social",icon:"👥",
+    definition:"Método, processo ou produto transformador, desenvolvido ou aplicado na interação com a população e apropriado por ela, que represente solução para inclusão social e melhoria das condições de vida.",
+    example:"Técnicas alternativas de produção, projetos de organizações comunitárias.",
+    useCase:"Forte quando há apropriação social direta, baixo custo, simplicidade e replicabilidade comunitária."},
+  {id:5,title:"Norma ou marco regulatório",category:"Regulação",icon:"⚖️",
+    definition:"Diretrizes que regulam o funcionamento do setor público ou privado. Tem por finalidade estabelecer regras para sistemas, órgãos, serviços, instituições e empresas, com mecanismos de regulação, compensação e penalidade.",
+    example:"Marco regulatório em educação, energia, saúde, norma regulamentadora em segurança e saúde no trabalho.",
+    useCase:"Aplicável quando a pesquisa gera minuta normativa, política institucional, regulamento, instrução ou protocolo formal."},
+  {id:6,title:"Patente",category:"Prop. intelectual",icon:"🛡️",
+    definition:"Título de propriedade temporária sobre uma invenção ou modelo de utilidade, outorgado pelo Estado aos inventores ou autores ou outras pessoas físicas ou jurídicas detentoras de direitos sobre a criação.",
+    example:"Patentes de invenção, patentes de modelo de utilidade.",
+    useCase:"Adequado para invenções ou modelos de utilidade com proteção formal junto ao Estado."},
+  {id:7,title:"Produtos/Processos em sigilo",category:"Prop. intelectual",icon:"🔒",
+    definition:"Bens físicos/tangíveis obtidos por combinação de ideias, que possam ser materializados ou produzidos por um determinado processo de fabricação, destinados ao uso restrito e comprovado por declaração de sigilo.",
+    example:"Novos processos de fabricação documentados, novos processos de gestão empresarial sistematizados.",
+    useCase:"Usado quando há produto ou processo restrito, estratégico ou protegido por declaração formal de sigilo."},
+  {id:8,title:"Software/Aplicativo",category:"Tecnologia",icon:"💻",
+    definition:"Conjunto de instruções ou declarações a serem usadas direta ou indiretamente por um computador, a fim de obter um determinado resultado. Composto por código-fonte desenvolvido em alguma linguagem de programação.",
+    example:"Programa de simulação, software de pesquisa operacional, softwares de gestão, aplicativos educacionais.",
+    useCase:"Adequado quando há código-fonte funcional, app, simulador, dashboard operacional ou sistema computacional."},
+  {id:9,title:"Base de dados técnico-científica",category:"Tecnologia",icon:"🗄️",
+    definition:"Conjunto de arquivos relacionados entre si com registros sobre pessoas, lugares ou objetos. Coleções organizadas de dados que se relacionam de forma a criar algum sentido e dar mais eficiência durante uma pesquisa.",
+    example:"Banco de dados de indicadores gerenciais, acervo de notificações.",
+    useCase:"Aplicável quando há banco estruturado, curado, documentado e útil para pesquisa, gestão ou decisão."},
+  {id:10,title:"Curso para formação profissional",category:"Formação",icon:"🎓",
+    definition:"Conjunto de conteúdos estabelecidos de acordo com as competências requeridas pela formação profissional, em conformidade com os objetivos do programa de Pós-Graduação.",
+    example:"Formação contínua de profissionais/gestores de organizações públicas e privadas.",
+    useCase:"Indicado quando a pesquisa resulta em trilha formativa, capacitação estruturada ou curso profissional aplicado."},
+  {id:11,title:"Material didático",category:"Formação",icon:"📚",
+    definition:"Produto de apoio/suporte com fins didáticos na mediação de processos de ensino e aprendizagem em diferentes contextos educacionais.",
+    example:"Livros didáticos, coleções e jogos educativos, programas de TV e Rádio, e-Books, plataformas e aplicativos de celular.",
+    useCase:"Adequado quando o produto principal é guia, cartilha, e-book, material instrucional, jogo educativo ou mídia de aprendizagem."},
+  {id:12,title:"Artigo técnico/tecnológico",category:"Documentos",icon:"📰",
+    definition:"Artigo publicado em revistas voltadas para campos específicos do conhecimento, geralmente relacionadas com o conhecimento tecnológico, mas que apresentam como foco o mercado, diferenciando das revistas científicas.",
+    example:"Publicação em periódicos e seções tecnológicas.",
+    useCase:"Aplicável quando a entrega é comunicação técnica orientada ao mercado, setor produtivo, organizações ou prática profissional."},
+];
+
+const categories = ["Todos","Gestão","Regulação","Tecnologia","Formação","Documentos","Social","Prop. intelectual"];
+
+let query = "";
+let selectedCategory = "Todos";
+let selected = pttTypes[2];
+let copied = false;
+
+function filtered() {
+  const q = query.trim().toLowerCase();
+  return pttTypes.filter(item => {
+    const okCat = selectedCategory === "Todos" || item.category === selectedCategory;
+    const okQ = !q || [item.title,item.category,item.definition,item.example,item.useCase].join(" ").toLowerCase().includes(q);
+    return okCat && okQ;
+  });
+}
+
+function render() {
+  const items = filtered();
+  document.getElementById('app').innerHTML = `
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">✨</div>
+      <div class="logo-text"><p>Área 27</p><h1>PTT Dashboard</h1></div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active">📊 Visão geral</button>
+      <button class="nav-btn">📋 Tipos de PTT</button>
+      <button class="nav-btn">📖 Definições</button>
+      <button class="nav-btn">✅ Entregáveis</button>
+    </nav>
+    <div class="sidebar-note">
+      <p class="label">Entrega</p>
+      <p class="body">Devem ser entregues o PTT em si e um breve relato descrevendo o PTT.</p>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <div class="header-top">
+        <div>
+          <p class="header-label">Produtos Técnicos/Tecnológicos</p>
+          <h2 class="main-title">Dashboard PTT — Área 27</h2>
+          <p class="main-subtitle">Definições adotadas para classificar produtos técnico-tecnológicos derivados de pesquisa aplicada em pós-graduação profissional.</p>
+        </div>
+        <div class="search-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="search" type="text" placeholder="Buscar por tipo, exemplo ou definição..." value="${escHtml(query)}"/>
+        </div>
+      </div>
+    </header>
+
+    <section class="summary">
+      <div class="card-info">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">O que é PTT?</div>
+        <div class="card-body">Produto Técnico Tecnológico é um resultado prático, aplicável e inovador derivado de pesquisas de pós-graduação, especialmente mestrados profissionais, voltado a resolver demandas reais.</div>
+      </div>
+      <div class="card-info">
+        <div class="card-icon">✅</div>
+        <div class="card-title">Entregáveis obrigatórios</div>
+        <div class="card-body">Devem ser entregues o PTT em si e um breve relato descrevendo o produto, sua finalidade, aderência, impacto, aplicabilidade e inovação.</div>
+      </div>
+      <div class="card-dark">
+        <div class="counters">
+          <div class="counter-item"><div class="counter-icon">📋</div><div class="counter-val">12</div><div class="counter-label">Tipos adotados</div></div>
+          <div class="counter-item"><div class="counter-icon">🗂️</div><div class="counter-val">7</div><div class="counter-label">Categorias</div></div>
+          <div class="counter-item"><div class="counter-icon">⭐</div><div class="counter-val">RTC</div><div class="counter-label">Recomendado</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="filters" id="filters">
+      ${categories.map(cat => `<button class="filter-btn ${selectedCategory===cat?'active':''}" data-cat="${escHtml(cat)}">${escHtml(cat)}</button>`).join('')}
+    </section>
+
+    <div class="grid-panel">
+      <section class="cards-grid" id="cards-grid">
+        ${items.length === 0
+          ? '<div class="empty">Nenhum tipo encontrado para o filtro atual.</div>'
+          : items.map(item => `
+            <button class="ptt-card ${selected.id===item.id?'active':''}" data-id="${item.id}">
+              <div class="card-head">
+                <div class="card-badges">
+                  <div class="num-badge">${item.id}</div>
+                  <div class="icon-badge">${item.icon}</div>
+                </div>
+                ${item.recommended ? '<span class="rec-badge">✓ recomendado</span>' : ''}
+              </div>
+              <div class="card-title-ptt">${escHtml(item.title)}</div>
+              <span class="def-label">Definição</span>
+              <p class="card-def">${escHtml(item.definition)}</p>
+              <div class="card-footer">
+                <span>${escHtml(item.category)}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </button>`).join('')}
+      </section>
+
+      <aside class="detail-panel">
+        <div class="detail-head">
+          <div>
+            <div class="detail-label">Detalhamento</div>
+            <div class="detail-title">${escHtml(selected.title)}</div>
+          </div>
+          <button class="close-btn" id="close-btn" title="Voltar ao recomendado">✕</button>
+        </div>
+        <div class="tag-row">
+          <span class="tag tag-blue">Tipo ${selected.id}</span>
+          <span class="tag tag-slate">${escHtml(selected.category)}</span>
+          ${selected.recommended ? '<span class="tag tag-green">PTT sugerido — MIS-COGERH</span>' : ''}
+        </div>
+        <div class="detail-blocks">
+          <div class="block block-def">
+            <div class="block-label">Definição completa</div>
+            <div class="block-text">${escHtml(selected.definition)}</div>
+          </div>
+          <div class="block block-ex">
+            <div class="block-label">Exemplo</div>
+            <div class="block-text">${escHtml(selected.example)}</div>
+          </div>
+          <div class="block block-use">
+            <div class="block-label">Uso típico</div>
+            <div class="block-text">${escHtml(selected.useCase)}</div>
+          </div>
+        </div>
+        <button class="copy-btn" id="copy-btn">
+          ${copied ? '✅ Copiado' : '📋 Copiar definição selecionada'}
+        </button>
+      </aside>
+    </div>
+
+    <div class="footer-banner">
+      <div class="banner-icon">✅</div>
+      <div>
+        <div class="banner-title">Regra operacional do PTT</div>
+        <div class="banner-body">O produto deve ser entregue como artefato principal e acompanhado de relato breve, contendo contexto, diagnóstico, desenvolvimento, aderência, impacto, aplicabilidade e inovação.</div>
+      </div>
+    </div>
+  </main>`;
+
+  // Events
+  document.getElementById('search').addEventListener('input', e => { query = e.target.value; render(); });
+
+  document.getElementById('filters').querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => { selectedCategory = btn.dataset.cat; render(); });
+  });
+
+  document.getElementById('cards-grid').querySelectorAll('.ptt-card').forEach(card => {
+    card.addEventListener('click', () => {
+      selected = pttTypes.find(p => p.id == card.dataset.id);
+      render();
+    });
+  });
+
+  document.getElementById('close-btn').addEventListener('click', () => {
+    selected = pttTypes[2];
+    render();
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', async () => {
+    const text = `${selected.id}. ${selected.title}\n\nDefinição: ${selected.definition}\n\nExemplo: ${selected.example}\n\nUso típico: ${selected.useCase}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+      render();
+      setTimeout(() => { copied = false; render(); }, 1600);
+    } catch(_) {}
+  });
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+render();
+</script>
+</body>
+</html>
